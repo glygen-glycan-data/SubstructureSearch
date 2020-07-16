@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Substructure Search</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.min.js"></script>
+</head>
+<body>
+<div id="basic">
+    <p id="time"></p>
+    <p id="server-status"></p>
+</div>
+<div id="compute">
+    <textarea rows = "40" cols = "150" id="sequence">WURCS=2.0/4,7,6/[u2122h_2*NCC/3=O][a2122h-1b_1-5_2*NCC/3=O][a1122h-1b_1-5][a1122h-1a_1-5]/1-2-3-4-4-4-4/a4-b1_b4-c1_c3-d1_c6-e1_e3-f1_e6-g1</textarea><br>
+    <table style="">
+        <tr>Alignment Options:</tr>
+        <tr>
+            <td>Motif Position</td>
+            <td>:</td>
+            <td><input type="radio" name="motif_match_position" value="anywhere" checked>Anywhere</td>
+            <td><input type="radio" name="motif_match_position" value="reo">Reducing-end only</td>
+            <td><input type="radio" name="motif_match_position" value="notre">Anywhere but Reducing-end</td>
+            <td><input type="radio" name="motif_match_position" value="fullstructure">Full Structure Match</td>
+        </tr>
+        <tr>
+            <td>Additional Subsituent</td>
+            <td>:</td>
+            <td><input type="radio" name="additional_subst" value="true">True</td>
+            <td><input type="radio" name="additional_subst" value="false" checked>False</td>
+        </tr>
+        <tr>
+            <td>Loose Root Monosaccaride matching &nbsp&nbsp&nbsp&nbsp</td>
+            <td>:</td>
+            <td><input type="radio" name="loose_root_match" value="true">True</td>
+            <td><input type="radio" name="loose_root_match" value="false" checked>False</td>
+        </tr>
+
+    </table>
+
+    <button id="submit-sequence" onclick="compute()">Submit</button>
+    <br><br><br>
+    <div id="result"></div>
+</div>
+<script>
+
+    function updateTime(){
+        d3.json("./date").then(function (d) {
+        var s = "This page opened at: ";
+        document.getElementById("time").innerHTML = s + d;
+    })
+    }
+    updateTime();
+
+    function updateServerStatus(){
+        d3.json("./queue").then(function (d) {
+            var s_p = " motifs are waiting for aligning";
+            var s_s = "1 motif is waiting for aligning";
+            var s_empty = "Empty load on the server";
+            var s = "";
+
+            if (d == 0) {
+                s = s_empty;
+            }
+            else if (d == 1) {
+                s = s_s;
+            }
+            else {
+                s = d + s_p;
+            }
+            document.getElementById("server-status").innerHTML = s;
+        })
+    }
+    updateServerStatus();
+
+    function space(){
+        var space = document.createElement("span");
+        space.innerHTML = '&nbsp&nbsp';
+        return space
+    }
+
+    var list_id = "";
+    var query_counter = 0;
+    var this_result = {};
+    function compute(){
+        var para = {};
+        for (var pk of ["motif_match_position", "additional_subst", "loose_root_match"]){
+            var elemts = document.getElementsByName(pk);
+            for (var elemt of elemts){
+                if (elemt.checked){
+                    para[pk] = elemt.value;
+                }
+            }
+        }
+        para["seq"] = document.getElementById("sequence").value;
+
+        var requestURL = "./submit?";
+        for (var k of Object.keys(para)){
+            requestURL += k + "=" + encodeURIComponent(para[k]) + "&";
+        }
+
+        d3.json(requestURL).then(function (d) {
+            list_id = d.list_id;
+            query_counter = 0;
+            //document.getElementById("result").innerHTML = "<a href='./retrieve?list_id="+d.list_id+"'>"+"Click me to see result"+"</a>";
+            document.getElementById("result").innerHTML = "Submitted successfully";
+            get_results();
+        })
+    }
+
+    function get_results() {
+        var requestURL = "./retrieve?list_id=" + list_id;
+        query_counter += 1;
+        d3.json(requestURL).then(function (d) {
+            if (d.finished){
+                this_result = d;
+                display_results();
+            }else{
+                setTimeout(get_results, 1000);
+                document.getElementById("result").innerHTML = "Checked for the "+query_counter+" times, haven't completed yet";
+            }
+        })
+    }
+
+    function display_results() {
+        var d = this_result;
+
+        var runtime = d["result"]["time spent"];
+        var matches = d["result"]["matches"];
+        var rterror = d["result"]["error"];
+
+        if (rterror.length > 0){
+            document.getElementById("result").innerHTML = rterror;
+            return
+        }
+
+        document.getElementById("result").innerHTML = "Runtime: " + runtime.toFixed(5) + "s<br> Matched glycan count: " + matches.length + "<br>";
+        for (var acc of matches){
+
+            var ele = document.createElement("a");
+            ele.innerText = acc;
+            document.getElementById("result").appendChild(ele);
+            document.getElementById("result").appendChild(space());
+
+            var ele = document.createElement("a");
+            ele.innerText = "GlyTouCan";
+            ele.href = "https://glytoucan.org/Structures/Glycans/" + acc;
+            document.getElementById("result").appendChild(ele);
+            document.getElementById("result").appendChild(space());
+
+            var ele = document.createElement("a");
+            ele.innerText = "GlycanData";
+            ele.href = "https://edwardslab.bmcb.georgetown.edu/glycandata/" + acc;
+            document.getElementById("result").appendChild(ele);
+            document.getElementById("result").appendChild(space());
+
+            var ele = document.createElement("a");
+            ele.innerText = "GlyGen";
+            ele.href = "https://www.glygen.org/glycan_detail.html?glytoucan_ac=" + acc;
+            document.getElementById("result").appendChild(ele);
+            document.getElementById("result").appendChild(space());
+
+            var ele = document.createElement("a");
+            ele.innerText = "SNFG_image";
+            ele.href = "https://image.glycosmos.org/snfg/png/" + acc;
+            document.getElementById("result").appendChild(ele);
+            document.getElementById("result").appendChild(space());
+
+            var ele = document.createElement("a");
+            ele.innerText = "CFG_image";
+            ele.href = "https://api.glygen.org/glycan/image/" + acc;
+            document.getElementById("result").appendChild(ele);
+
+
+
+            document.getElementById("result").appendChild(document.createElement("br"));
+        }
+    }
+
+
+
+
+
+</script>
+</body>
+</html>
