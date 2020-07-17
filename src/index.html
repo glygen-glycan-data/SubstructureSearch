@@ -53,7 +53,7 @@
 
     function updateServerStatus(){
         d3.json("./queue").then(function (d) {
-            var s_p = " motifs are waiting for aligning";
+            const s_p = " motifs are waiting for aligning";
             var s_s = "1 motif is waiting for aligning";
             var s_empty = "Empty load on the server";
             var s = "";
@@ -129,7 +129,7 @@
         var rterror = d["result"]["error"];
 
         if (rterror.length > 0){
-            document.getElementById("result").innerHTML = rterror;
+            document.getElementById("result").innerHTML = "ERROR: "+rterror;
             return
         }
 

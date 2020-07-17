@@ -1,4 +1,3 @@
 #!/bin/bash
 
-# cd service
-nohup ./service/substructure_search > ./substructure_search.out &
+nohup ./service/substructure_search -c service.ini > ./substructure_search.out &

@@ -13,11 +13,12 @@ import pygly.alignment
 from pygly.GlycanFormatter import WURCS20Format, GlycoCTFormat
 
 
-# Configuration
+# Default Configuration
 flask_API_port = 10980
 flask_API_host = "localhost" # "0.0.0.0"
 
 worker_num = 1
+max_motif_size = 10
 structure_file_path = ""
 result_file_path = ""
 
@@ -39,11 +40,6 @@ class ParameterError(SubstructureSearchError):
 
 
 # Handle parameters and configuration file
-# TODO
-sys.argv.append("-c")
-sys.argv.append("service.ini")
-
-
 if len(sys.argv) > 1:
 
     kvpara = {}
@@ -56,16 +52,16 @@ if len(sys.argv) > 1:
     if "c" not in kvpara:
         raise ParameterError("No config file provided")
     else:
-        # TODO handle dir better?
         currentdir = os.path.dirname(sys.argv[0])
         currentdirabs = os.path.abspath(currentdir)
-        # homedir = os.path.expanduser("~/")
+
         configpath = os.path.join(currentdirabs, kvpara["c"])
 
         config = ConfigParser.SafeConfigParser()
         config.readfp(open(configpath))
 
         worker_num = config.get("substructure_search", "cpu_core")
+        max_motif_size = config.get("substructure_search", "max_motif_size")
 
         structure_file_path = config.get("substructure_search", "glycan_set")
         structure_file_path = os.path.join(currentdirabs, structure_file_path)
@@ -74,6 +70,7 @@ if len(sys.argv) > 1:
         flask_API_port = config.get("service", "port")
         # result_file_path = config.get("service", "result_file_log")
 
+        max_motif_size = int(max_motif_size)
         worker_num = int(worker_num)
         flask_API_port = int(flask_API_port)
 
@@ -85,21 +82,11 @@ else:
 
 
 
-# Define functions
-def flask_API_init(shared_resources, flask_API_host, flask_API_port, result_file_path):
+# Define functions for flask process
+def flask_API_init(shared_resources, flask_API_host, flask_API_port):
 
     task_queue, result_queue = shared_resources
-    """
-    if os.path.exists(result_file_path):
-        results = json.load(open(result_file_path))
-    else:
-        results = {}
-    def result_file_dump():
-        print "dumping"
-        json.dump(results, open(result_file_path))
 
-    atexit.register(result_file_dump)
-    """
     results = {}
 
 
@@ -219,7 +206,7 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port, result_file
 
 
 
-
+# Define functions for computing process
 def substructure_search_init(shared_resources, structure_list_file_path):
     task_queue, result_queue = shared_resources
 
@@ -294,7 +281,7 @@ def substructure_search_init(shared_resources, structure_list_file_path):
 
         if len(error) == 0:
             motif_node_num = len(list(motif.all_nodes()))
-            if motif_node_num > 10:
+            if motif_node_num > max_motif_size:
                 error.append("Motif is too big")
 
         # TODO time out mechanism to avoid running for too long
@@ -343,7 +330,7 @@ if __name__ == "__main__":
 
     shared_resources = [task_queue, result_queue, ]
 
-    front_end_API_process = multiprocessing.Process(target=flask_API_init, args=(shared_resources, flask_API_host, flask_API_port, result_file_path))
+    front_end_API_process = multiprocessing.Process(target=flask_API_init, args=(shared_resources, flask_API_host, flask_API_port))
     front_end_API_process.start()
 
     worker_processor_pool = []
