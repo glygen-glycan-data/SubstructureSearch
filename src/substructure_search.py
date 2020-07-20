@@ -106,7 +106,7 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
 
     @app.route('/queue', methods=['GET', 'POST'])
     def getqueuelength():
-        # update_results()
+        update_results()
         n = len(filter(lambda x: not x["finished"], results.values()))
         return flask.jsonify(n)
 

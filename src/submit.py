@@ -32,11 +32,11 @@ if "pos" in kvpara:
 
 as_flag = 'false'
 if "as" in kvpara:
-    flag = kvpara["as"]
+    as_flag = kvpara["as"]
 
 lr_flag = 'false'
 if "lr" in kvpara:
-    flag = kvpara["lr"]
+    lr_flag = kvpara["lr"]
 
 main_url = "http://localhost"
 if "host" in kvpara:
