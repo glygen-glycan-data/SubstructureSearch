@@ -153,6 +153,7 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
             "additional_subst": additional_subst,
             "loose_root_match": loose_root_match
         }
+        print >> sys.stderr,  "Job received by API: %s" % (task)
         status = {
             "id": list_id,
             "submission_detail": task,
@@ -181,7 +182,7 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
             except Queue.Empty:
                 break
             except KeyError:
-                print "Job ID %s is not present" % res["id"]
+                print >> sys.stderr,  "Job ID %s is not present" % res["id"]
 
 
     @app.route('/retrieve', methods=['GET', 'POST'])
@@ -201,13 +202,14 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
 
         return flask.jsonify(rjson)
 
-
+    print >> sys.stderr,  "Running FLASK at http://%s:%s" % (flask_API_host, flask_API_port)
     app.run(host=flask_API_host, port=flask_API_port, threaded=False)
 
 
 
 # Define functions for computing process
-def substructure_search_init(shared_resources, structure_list_file_path):
+def substructure_search_init(shared_resources, structure_list_file_path, PPID):
+    print >> sys.stderr,  "Computing Processor%s is starting" % PPID
     task_queue, result_queue = shared_resources
 
     gp = GlycoCTFormat()
@@ -224,9 +226,12 @@ def substructure_search_init(shared_resources, structure_list_file_path):
     for line in open(structure_list_file_path):
         acc, s = line.strip().split()
         glycans[acc] = wp.toGlycan(s)
+    print >> sys.stderr,  "Processor-%s: finishes loading %s glycans" % (PPID, len(glycans))
 
     while True:
         task_detail = task_queue.get(block=True)
+
+        print >> sys.stderr,  "Processor-%s: Job %s received." % (PPID, task_detail["id"])
 
         seq = task_detail["seq"]
         loose_root_match = task_detail["loose_root_match"]
@@ -288,6 +293,8 @@ def substructure_search_init(shared_resources, structure_list_file_path):
         for acc, glycan in glycans.items():
 
             if len(error) != 0:
+                for e in error:
+                    print >> sys.stderr, "Processor-%s: Issues (%s) is found with task %s" % (PPID, e, task_detail["id"])
                 break
 
             if fullstructure:
@@ -306,10 +313,11 @@ def substructure_search_init(shared_resources, structure_list_file_path):
             "id": jobid,
             "start time": calculation_start_time,
             "end time": calculation_end_time,
-            "time spent": calculation_time_cost,
+            "alignment calculation time": calculation_time_cost,
             "matches": matches,
             "error": error
         }
+        print >> sys.stderr,  "Processor-%s: Job %s finished within %ss" % (PPID, task_detail["id"], calculation_time_cost)
         result_queue.put(res)
 
 
@@ -336,7 +344,7 @@ if __name__ == "__main__":
     worker_processor_pool = []
 
     for i in range(worker_num):
-        worker_processor = multiprocessing.Process(target=substructure_search_init, args=(shared_resources, structure_file_path))
+        worker_processor = multiprocessing.Process(target=substructure_search_init, args=(shared_resources, structure_file_path, i))
         worker_processor.start()
         worker_processor_pool.append(worker_processor)
 

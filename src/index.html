@@ -124,7 +124,7 @@
     function display_results() {
         var d = this_result;
 
-        var runtime = d["result"]["time spent"];
+        var runtime = d["result"]["alignment calculation time"];
         var matches = d["result"]["matches"];
         var rterror = d["result"]["error"];
 
@@ -133,7 +133,7 @@
             return
         }
 
-        document.getElementById("result").innerHTML = "Runtime: " + runtime.toFixed(5) + "s<br> Matched glycan count: " + matches.length + "<br>";
+        document.getElementById("result").innerHTML = "Alignment Calculation Time: " + runtime.toFixed(5) + "s<br> Matched glycan count: " + matches.length + "<br>";
         for (var acc of matches){
 
             var ele = document.createElement("a");
