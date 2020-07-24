@@ -3,16 +3,13 @@
 ## Basics
 1. Run package/init.sh to start the Flask API and preparing the worker processes.
 2. Run package/submit.sh to submit motif.
+
 ## Submit.sh
 1. Supported Parameters
 ```
 -s glycan sequence(*) file
 -seq glycan sequence(*)
-
-
--pos motif match position, allowed value ["anywhere", "reo", "notre", "fullstructure"]
--as allow additional substituent (Sulfate or Phosphate), allowed value ["true", "false"]
--lr loose root matching, allowed value ["true", "false"]
+-pos motif match position, allowed value ["anywhere", "reo"]
 
 -host http://localhost as default
 -port 10980 as default
