@@ -115,8 +115,8 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
     def submit():
 
         motif_match_position = "anywhere"
-        additional_subst = False
-        loose_root_match = False
+        #additional_subst = False
+        #loose_root_match = False
         query_sequence = ""
 
         if flask.request.method == "GET":
@@ -132,26 +132,22 @@ def flask_API_init(shared_resources, flask_API_host, flask_API_port):
 
         if "motif_match_position" in para:
             motif_match_position = para["motif_match_position"].lower()
-            if motif_match_position not in ["anywhere", "reo", "notre", "fullstructure"]:
+            if motif_match_position not in ["anywhere", "reo"]:
                 raise ParameterError("motif match position is not recognized")
-
+        """
         if "additional_subst" in para:
             if para["additional_subst"] == 'true':
                 additional_subst = True
+        """
 
-        if "loose_root_match" in para:
-            if para["loose_root_match"] == 'true':
-                loose_root_match = True
-
-        tmp = query_sequence + "_" + str(motif_match_position) + "_" + str(additional_subst) + "_" + str(loose_root_match)
+        tmp = query_sequence + "_" + str(motif_match_position)# + "_" + str(additional_subst)
         list_id = hashlib.sha256(tmp).hexdigest()
 
         task = {
             "id": list_id,
             "seq": query_sequence,
             "motif_match_position": motif_match_position,
-            "additional_subst": additional_subst,
-            "loose_root_match": loose_root_match
+            #"additional_subst": additional_subst
         }
         print >> sys.stderr,  "Job received by API: %s" % (task)
         status = {
@@ -217,9 +213,7 @@ def substructure_search_init(shared_resources, structure_list_file_path, PPID):
 
     motif_match_connected_nodes_cache = pygly.alignment.ConnectedNodesCache()
     mm1 = pygly.alignment.GlyTouCanMotif(connected_nodes_cache=motif_match_connected_nodes_cache)
-    mm2 = pygly.alignment.MotifAllowOptionalSub(connected_nodes_cache=motif_match_connected_nodes_cache)
-    mm3 = pygly.alignment.MotifLooseRoot(connected_nodes_cache=motif_match_connected_nodes_cache)
-    mm4 = pygly.alignment.MotifAllowOptionalSubAndLooseRoot(connected_nodes_cache=motif_match_connected_nodes_cache)
+    # mm2 = pygly.alignment.MotifAllowOptionalSub(connected_nodes_cache=motif_match_connected_nodes_cache)
 
 
     glycans = {}
@@ -234,44 +228,42 @@ def substructure_search_init(shared_resources, structure_list_file_path, PPID):
         print >> sys.stderr,  "Processor-%s: Job %s received." % (PPID, task_detail["id"])
 
         seq = task_detail["seq"]
-        loose_root_match = task_detail["loose_root_match"]
         jobid = task_detail["id"]
-        additional_subst = task_detail["additional_subst"]
+
+        #loose_root_match = task_detail["loose_root_match"]
+        #additional_subst = task_detail["additional_subst"]
 
         motif_match_position = task_detail["motif_match_position"]
 
         motif_matcher = mm1
-        if additional_subst:
-            motif_matcher = mm2
+        """
         if loose_root_match:
             motif_matcher = mm3
-        if loose_root_match and additional_subst:
-            motif_matcher = mm4
+
+        """
 
 
-        fullstructure = False
+        #fullstructure = False
         rootOnly = False
         anywhereExceptRoot = False
         if motif_match_position == "anywhere":
             pass
         elif motif_match_position == "reo":
             rootOnly = True
+        else:
+            pass
+        """
         elif motif_match_position == "notre":
             anywhereExceptRoot = True
         elif motif_match_position == "fullstructure":
             rootOnly = True
             fullstructure = True
-        else:
-            pass
-
+        """
 
 
         matches = []
         error = []
         calculation_start_time = time.time()
-
-        if loose_root_match and not rootOnly:
-            error.append("Loose Root Match is only available for reducing-end alignment")
 
         try:
             if "RES" in seq:
@@ -297,9 +289,9 @@ def substructure_search_init(shared_resources, structure_list_file_path, PPID):
                     print >> sys.stderr, "Processor-%s: Issues (%s) is found with task %s" % (PPID, e, task_detail["id"])
                 break
 
-            if fullstructure:
-                if motif_node_num != len(list(glycan.all_nodes())):
-                    continue
+            #if fullstructure:
+            #    if motif_node_num != len(list(glycan.all_nodes())):
+            #        continue
 
             if motif_matcher.leq(motif, glycan, rootOnly=rootOnly, anywhereExceptRoot=anywhereExceptRoot):
                 matches.append(acc)

@@ -30,14 +30,6 @@ pos = "anywhere"
 if "pos" in kvpara:
     pos = kvpara["pos"]
 
-as_flag = 'false'
-if "as" in kvpara:
-    as_flag = kvpara["as"]
-
-lr_flag = 'false'
-if "lr" in kvpara:
-    lr_flag = kvpara["lr"]
-
 main_url = "http://localhost"
 if "host" in kvpara:
     main_url = kvpara["host"]
@@ -56,9 +48,7 @@ if port not in [22, "22"]:
 
 params = {
     "seq": seq,
-    "motif_match_position": pos,
-    "additional_subst": as_flag,
-    "loose_root_match": lr_flag
+    "motif_match_position": pos
 }
 
 

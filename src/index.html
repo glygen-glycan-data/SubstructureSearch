@@ -18,22 +18,17 @@
             <td>Motif Position</td>
             <td>:</td>
             <td><input type="radio" name="motif_match_position" value="anywhere" checked>Anywhere</td>
-            <td><input type="radio" name="motif_match_position" value="reo">Reducing-end only</td>
-            <td><input type="radio" name="motif_match_position" value="notre">Anywhere but Reducing-end</td>
-            <td><input type="radio" name="motif_match_position" value="fullstructure">Full Structure Match</td>
+            <td><input type="radio" name="motif_match_position" value="reo">Reducing-end Only</td>
         </tr>
+        <!--
         <tr>
             <td>Additional Subsituent</td>
             <td>:</td>
             <td><input type="radio" name="additional_subst" value="true">True</td>
             <td><input type="radio" name="additional_subst" value="false" checked>False</td>
         </tr>
-        <tr>
-            <td>Loose Root Monosaccaride matching &nbsp&nbsp&nbsp&nbsp</td>
-            <td>:</td>
-            <td><input type="radio" name="loose_root_match" value="true">True</td>
-            <td><input type="radio" name="loose_root_match" value="false" checked>False</td>
-        </tr>
+        -->
+
 
     </table>
 
@@ -83,7 +78,7 @@
     var this_result = {};
     function compute(){
         var para = {};
-        for (var pk of ["motif_match_position", "additional_subst", "loose_root_match"]){
+        for (var pk of ["motif_match_position"]){
             var elemts = document.getElementsByName(pk);
             for (var elemt of elemts){
                 if (elemt.checked){
